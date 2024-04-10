@@ -1,0 +1,10 @@
+{
+    "solarManagerURL": "https://cloud.solar-manager.ch/v1/stream/sensor/{solarmanagerid}",
+    "solarManagerSensorID": "solarmanagertempsensor_id",
+    "temperatureThreshold": 55,
+    "temperatureTurnOff": 60,
+    "checkInterval": 5, 
+    "weeklyCheckInterval": 168,
+    "username": "username",
+    "password": "password"
+}

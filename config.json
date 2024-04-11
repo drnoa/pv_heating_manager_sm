@@ -6,5 +6,7 @@
     "checkInterval": 5, 
     "weeklyCheckInterval": 168,
     "username": "username",
-    "password": "password"
+    "password": "password",
+    "heatPumpID": "659691b6c457404accd89782",
+    "heatPumpControlURL": "https://cloud.solar-manager.ch/v1/control/heat-pump/%s"
 }

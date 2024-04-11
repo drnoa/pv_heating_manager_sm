@@ -20,6 +20,8 @@ type Config struct {
 	WeeklyCheckInterval  int     `json:"weeklyCheckInterval"`
 	Username             string  `json:"username"`
 	Password             string  `json:"password"`
+	HeatPumpID           string  `json:"heatPumpID"`
+	HeatPumpControlURL   string  `json:"heatPumpControlURL"`
 }
 
 type HeatingManager struct {
@@ -162,7 +164,7 @@ func (hm *HeatingManager) turnHeatingOn() error {
 		return fmt.Errorf("error getting auth token: %v", err)
 	}
 
-	url := fmt.Sprintf("https://cloud.solar-manager.ch/v1/control/heat-pump/%s", "xxx")
+	url := fmt.Sprintf(hm.Config.HeatPumpControlURL, hm.Config.HeatPumpID)
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"heatPumpChargingMode": 1,
 	})
@@ -179,7 +181,7 @@ func (hm *HeatingManager) turnHeatingOff() error {
 		return fmt.Errorf("error getting auth token: %v", err)
 	}
 
-	url := fmt.Sprintf("https://cloud.solar-manager.ch/v1/control/heat-pump/%s", "xxx")
+	url := fmt.Sprintf(hm.Config.HeatPumpControlURL, hm.Config.HeatPumpID)
 	requestBody, err := json.Marshal(map[string]interface{}{
 		"heatPumpChargingMode": 2,
 	})

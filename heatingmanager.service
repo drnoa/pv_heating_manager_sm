@@ -1,0 +1,12 @@
+[Unit]
+Description=Heating Manager Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/heatingmanager
+Restart=on-failure
+ExecStop=/usr/bin/pkill -SIGTERM -f heatingmanager
+
+[Install]
+WantedBy=multi-user.target

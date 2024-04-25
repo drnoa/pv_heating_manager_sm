@@ -7,16 +7,18 @@ import (
 	"time"
 )
 
+// HeatingManager represents the main logic of the heating manager.
 type HeatingManager struct {
-	Config              Config
-	TemperatureExceeded bool
+	Config              Config // Configuration for the heating manager.
+	TemperatureExceeded bool   // Flag indicating if the temperature threshold has been exceeded.
 	CheckInterval       time.Duration
-	LastCheckFile       string
-	Token               string
-	TokenExpiry         time.Time
+	LastCheckFile       string    // File to save and read the last check time from.
+	Token               string    // Token for authentication with the heating API.
+	TokenExpiry         time.Time // Expiration time of the token.
 }
 
 // NewHeatingManager creates a new HeatingManager instance.
+// It loads the configuration and initializes the HeatingManager.
 func NewHeatingManager() (*HeatingManager, error) {
 	config, err := loadConfig()
 	if err != nil {
@@ -31,6 +33,7 @@ func NewHeatingManager() (*HeatingManager, error) {
 }
 
 // StartTemperatureMonitoring starts the temperature monitoring loop.
+// It checks the temperature at regular intervals.
 func (hm *HeatingManager) StartTemperatureMonitoring() {
 	ticker := time.NewTicker(hm.CheckInterval)
 	defer ticker.Stop()
@@ -41,6 +44,7 @@ func (hm *HeatingManager) StartTemperatureMonitoring() {
 }
 
 // StartWeeklyCheck starts the weekly check loop.
+// It checks if the temperature threshold has been exceeded and turns on the heating if necessary.
 func (hm *HeatingManager) StartWeeklyCheck() {
 	weeklyCheckTimer := time.NewTimer(hm.nextWeeklyCheckDuration())
 	defer weeklyCheckTimer.Stop()
@@ -52,13 +56,14 @@ func (hm *HeatingManager) StartWeeklyCheck() {
 }
 
 // weeklyCheck checks if the temperature threshold has been exceeded and turns on the heating if necessary.
+// It also schedules to turn off the heating after a certain duration.
 func (hm *HeatingManager) weeklyCheck() {
 	if !hm.TemperatureExceeded {
 		if err := hm.turnHeatingOn(); err != nil {
 			log.Printf("Failed to turn on heating: %v", err)
 		}
 
-		// Schedule to turn off after a certain duration
+		// Schedule to turn off after 4 hours
 		time.AfterFunc(4*time.Hour, func() {
 			if err := hm.turnHeatingOff(); err != nil {
 				log.Printf("Failed to turn off heating: %v", err)
@@ -79,6 +84,7 @@ func (hm *HeatingManager) saveLastCheckTime() {
 }
 
 // nextWeeklyCheckDuration calculates the duration until the next weekly check.
+// It returns 0 if the next check time has already passed.
 func (hm *HeatingManager) nextWeeklyCheckDuration() time.Duration {
 	lastCheck, err := hm.readLastCheckTime()
 	if err != nil {

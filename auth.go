@@ -1,5 +1,3 @@
-// auth.go
-
 package main
 
 import (
@@ -11,22 +9,45 @@ import (
 	"time"
 )
 
+// HeatingManager represents the main application struct.
+type HeatingManager struct {
+	Config      Config
+	Token       string
+	TokenExpiry time.Time
+}
+
 // getAuthToken gets or refreshes the authentication token as necessary.
+//
+// This function first checks if a token is present, and if not, performs a login.
+// If a token is present, it checks if it has expired. If it has, the function performs a token refresh.
+// If a valid token is present, the function does nothing.
+//
+// Returns:
+// - error: If there was an error during the process of obtaining or refreshing the token.
 func (hm *HeatingManager) getAuthToken() error {
-	// Wenn kein Token vorhanden ist, führe einen Login durch
+	// Check if a token is present
 	if hm.Token == "" {
+		// If no token is present, perform a login
 		return hm.login()
 	}
 
-	// Wenn das Token vorhanden ist, aber abgelaufen, führe einen Refresh durch
+	// Check if the token has expired
 	if time.Now().After(hm.TokenExpiry) {
+		// If the token has expired, perform a token refresh
 		return hm.refreshToken()
 	}
 
-	// Wenn das Token vorhanden und gültig ist, mache nichts
+	// If a valid token is present, do nothing
 	return nil
 }
 
+// login performs a login to obtain a new authentication token.
+//
+// The function sends a POST request to the Solar Manager API with the user's credentials.
+// If the request is successful, a new token is obtained and stored in the HeatingManager struct.
+//
+// Returns:
+// - error: If there was an error during the login process.
 func (hm *HeatingManager) login() error {
 	url := "https://cloud.solar-manager.ch/v1/oauth/login"
 	credentials := map[string]string{
@@ -51,20 +72,26 @@ func (hm *HeatingManager) login() error {
 
 	var result struct {
 		AccessToken string `json:"accessToken"`
-		ExpiresIn   int    `json:"expiresIn"` // Die Dauer bis zum Ablauf des Tokens in Sekunden
+		ExpiresIn   int    `json:"expiresIn"` // Duration until the token expires in seconds
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return fmt.Errorf("error decoding auth response: %v", err)
 	}
 
 	hm.Token = result.AccessToken
-	// Setze das Ablaufdatum basierend auf dem aktuellen Zeitpunkt plus der Gültigkeitsdauer des Tokens
+	// Set the expiry date of the token based on the current time plus the token's duration
 	hm.TokenExpiry = time.Now().Add(time.Duration(result.ExpiresIn) * time.Second)
 
 	return nil
 }
 
 // refreshToken refreshes the authentication token.
+//
+// The function sends a POST request to the Solar Manager API with the current token.
+// If the request is successful, a new token is obtained and stored in the HeatingManager struct.
+//
+// Returns:
+// - error: If there was an error during the refresh process.
 func (hm *HeatingManager) refreshToken() error {
 	url := "https://cloud.solar-manager.ch/v1/oauth/refresh"
 	req, err := http.NewRequest("POST", url, nil)
@@ -87,7 +114,7 @@ func (hm *HeatingManager) refreshToken() error {
 
 	var result struct {
 		AccessToken string `json:"accessToken"`
-		ExpiresIn   int    `json:"expiresIn"`
+		ExpiresIn   int    `json:"expiresIn"` // Duration until the token expires in seconds
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return fmt.Errorf("error decoding refresh response: %v", err)

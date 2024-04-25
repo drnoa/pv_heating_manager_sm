@@ -1,5 +1,3 @@
-// temperature.go
-
 package main
 
 import (
@@ -7,9 +5,21 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 )
 
+// HeatingManager is the struct that handles the heating system.
+type HeatingManager struct {
+	Config              Config
+	Token               string
+	TokenExpiry         time.Time
+	TemperatureExceeded bool
+}
+
 // checkTemperature checks the temperature and sets the TemperatureExceeded flag accordingly.
+// It makes a request to the Solar Manager API to get the current water temperature.
+// If the temperature exceeds the configured threshold, it sets the TemperatureExceeded flag to true.
+// Otherwise, it sets it to false.
 func (hm *HeatingManager) checkTemperature() {
 	temperature, err := hm.getTemperature()
 	if err != nil {
@@ -27,11 +37,16 @@ func (hm *HeatingManager) checkTemperature() {
 }
 
 // getTemperature gets the temperature from the Solar Manager API.
+// It refreshes the authentication token if it has expired.
+// It makes a GET request to the Solar Manager API and retrieves the current water temperature.
+// It returns the temperature as a float64 and an error if any occurred.
 func (hm *HeatingManager) getTemperature() (float64, error) {
+	// Refresh the authentication token if it has expired
 	if err := hm.getAuthToken(); err != nil {
 		return 0, err
 	}
 
+	// Make a GET request to the Solar Manager API
 	url := fmt.Sprintf("%s/%s", hm.Config.SolarManagerURL, hm.Config.SolarManagerSensorID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -57,6 +72,7 @@ func (hm *HeatingManager) getTemperature() (float64, error) {
 		} `json:"data"`
 	}
 
+	// Unmarshal the response JSON into the result struct
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return 0, fmt.Errorf("failed to unmarshal temperature response: %v", err)
 	}
